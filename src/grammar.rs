@@ -4,11 +4,12 @@ use std::collections::{HashMap, HashSet};
 type InputSymbolSet = Vec<&'static str>;
 type SymbolSet = HashSet<String>;
 
+#[derive(Debug, Clone)]
 pub(crate) struct Grammar {
-    variables: SymbolSet,
-    terminals: SymbolSet,
-    rules: HashMap<String, Vec<Vec<String>>>,
-    start: String,
+    pub(crate) variables: SymbolSet,
+    pub(crate) terminals: SymbolSet,
+    pub(crate) rules: HashMap<String, Vec<Vec<String>>>,
+    pub(crate) start: String,
     first_set: HashMap<String, SymbolSet>,
     follow_set: HashMap<String, SymbolSet>,
     symbol_index: HashMap<String, Vec<(String, usize, usize)>>
