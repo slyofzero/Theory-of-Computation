@@ -1,10 +1,14 @@
 #![allow(dead_code, unused_assignments)]
-use std::{collections::{HashMap, HashSet}, str};
 
-type State = String;
-type Alphabet = char;
+use std::{collections::{HashMap, HashSet}, ops::{Deref, DerefMut}, str};
 
-#[derive(Debug)]
+use crate::dfa::DFATransitionTable;
+
+pub type State = String;
+pub type Alphabet = char;
+
+// StatesSet
+#[derive(Debug, Clone)]
 pub struct StatesSet(HashSet<State>);
 
 impl StatesSet {
@@ -17,9 +21,24 @@ impl StatesSet {
     }
 }
 
+impl Deref for StatesSet {
+    type Target = HashSet<State>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for StatesSet {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 type AlphabetsSet = HashSet<Alphabet>;
 type TransitionTable = HashMap<State, HashMap<Alphabet, StatesSet>>;
 
+// NFA
 pub struct NFA {
     states: StatesSet,
     alphabets: AlphabetsSet,
@@ -41,11 +60,11 @@ impl NFA {
     fn get_next_states(&self, current_states: StatesSet, char: char) -> StatesSet {
         let mut next_states = StatesSet::new();
 
-        for state in current_states.0.iter() {
+        for state in current_states.iter() {
             if let Some(current_state_transitions) = self.transitions.get(state) {
                 if let Some(next_state_set) = current_state_transitions.get(&char) {
-                    for next_state in next_state_set.0.iter() {
-                        next_states.0.insert(next_state.to_string());
+                    for next_state in next_state_set.iter() {
+                        next_states.insert(next_state.clone());
                     }
                 }
             }
@@ -61,8 +80,8 @@ impl NFA {
             current_states = self.get_next_states(current_states, char);
         }
 
-        for current_state in current_states.0.iter() {
-            if self.final_states.0.contains(current_state) {
+        for current_state in current_states.iter() {
+            if self.final_states.contains(current_state) {
                 return true;
             }
         }
@@ -70,10 +89,24 @@ impl NFA {
         false
     }
 
-    pub fn to_dfa(&self) {}
+    pub fn to_dfa(&self) {
+        let mut dfa_transitions = DFATransitionTable::new();
+        let mut current_state = &self.start_state;
+        let mut states_added = StatesSet::new();
+
+        if states_added.get(current_state).is_none() {
+            states_added.insert(current_state.to_string());
+            if let Some(current_transitions) = self.transitions.get(current_state) {
+                for (char, next_states) in current_transitions {
+                    dfa_transitions.insert(current_state.clone(), *char, &next_states);
+                }
+                println!("{:?}", dfa_transitions);
+            }
+        }
+    }
 }
 
-fn create_nfa() -> NFA {
+pub fn create_nfa() -> NFA {
     let states = StatesSet::from(&["q0", "q1", "q2"]);
     let final_states = StatesSet::from(&["q2"]);
     let alphabets = HashSet::from(['a', 'b']);
